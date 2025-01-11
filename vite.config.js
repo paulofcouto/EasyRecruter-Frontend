@@ -1,9 +1,9 @@
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import { fileURLToPath, URL } from 'node:url';
-import { BASE_URL } from './src/config';
 
 export default defineConfig({
+  base: './', // Garante caminhos relativos para produção
   plugins: [vue()],
   resolve: {
     alias: {
@@ -13,7 +13,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: BASE_URL,
+        target: process.env.VITE_API_BASE_URL, // Variável para desenvolvimento
         changeOrigin: true,
         secure: false,
       },

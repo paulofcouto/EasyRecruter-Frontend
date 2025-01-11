@@ -3,7 +3,7 @@ import apiClient from './api';
 
 export const login = async (email, senha) => {
   try {
-    const response = await apiClient.post('/api/v1/auth/login', { email, senha });
+    const response = await apiClient.post('/v1/autenticar', { email, senha });
     const token = response.data.token;
     sessionStorage.setItem('authToken', token);
     return response;
@@ -15,10 +15,10 @@ export const login = async (email, senha) => {
 
 export const cadastrar = async (email, senha) => {
   try {
-    const response = await apiClient.post('/api/v1/Usuario/cadastrar', { email, senha });
-    return response; // Retorna a resposta em caso de sucesso
+    const response = await apiClient.post('/v1/Usuario/cadastrar', { email, senha });
+    return response; 
   } catch (error) {
     console.error('Erro no cadastro:', error.response?.data || error.message);
-    throw error; // Lança o erro para ser tratado no componente
+    throw error;
   }
 };

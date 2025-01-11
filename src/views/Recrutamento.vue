@@ -31,19 +31,31 @@
               <p><strong>Descrição: </strong>{{ candidato.descricaoProfissional }}</p>
               <p><strong>Resumo: </strong>{{ candidato.resumo }}</p>
             </div>
+            <el-button
+              class="delete-button"
+              type="danger"
+              size="small"
+              icon="Delete"
+              @click="deletarCandidato(candidato.id)"
+            >
+            </el-button>
           </div>
         </el-card>
       </el-col>
     </el-row>
 
-    <p v-else class="no-results">Nenhum candidato encontrado.</p>
+    <p v-else class="no-results">
+      Nenhum candidato encontrado. <br>
+      Se você é novo no sistema e precisa de ajuda para começar, 
+      <a href="#/sobre">clique aqui</a> e saiba mais sobre como utilizar a plataforma de recrutamento.
+    </p>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import { Search } from "@element-plus/icons-vue";
-import { getCandidatos } from "../services/candidatoService";
+import { getCandidatos, deleteCandidato } from "../services/candidatoService";
 
 const searchQuery = ref("");
 const candidatos = ref([]);
@@ -55,6 +67,16 @@ const fetchCandidatos = async () => {
     console.error("Erro ao carregar candidatos:", error);
   }
 };
+
+const deletarCandidato = async (id) => {
+  try {
+    await deleteCandidato(id); 
+    candidatos.value = candidatos.value.filter((candidato) => candidato.id !== id);
+  } catch (error) {
+    console.error("Erro ao excluir candidato:", error);
+  }
+};
+
 
 const filteredCandidatos = computed(() =>
   candidatos.value.filter((candidato) =>
@@ -130,10 +152,17 @@ onMounted(() => {
   text-align: center;
   font-size: 16px;
   color: #666;
-  margin-top: 20px;
+  margin-top: 60px;
 }
 
 .card-col {
   margin-bottom: 20px;
+}
+
+.delete-button {
+  top: 10px;
+  right: 10px;
+  font-size: 15px;
+  padding: 5px;
 }
 </style>

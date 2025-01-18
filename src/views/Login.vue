@@ -7,13 +7,60 @@
                 <h3 class="login-title">{{ isRegister ? "Crie sua conta" : "Seja bem-vindo" }}</h3>
                 <el-form :model="loginForm" @submit.prevent="isRegister ? handleRegister : handleLogin">
                     <el-form-item>
-                        <el-input v-model="loginForm.email" placeholder="Inserir seu email" prefix-icon="el-icon-user"></el-input>
+                        <el-input
+                            v-model="loginForm.email"
+                            placeholder="Inserir seu email"
+                            prefix-icon="el-icon-user"
+                        >
+                        </el-input>
                     </el-form-item>
+                    <!-- Campo de Senha -->
                     <el-form-item>
-                        <el-input type="password" v-model="loginForm.senha" placeholder="Insira sua senha" prefix-icon="el-icon-lock"></el-input>
+                        <el-input
+                            :type="showPassword ? 'text' : 'password'"
+                            v-model="loginForm.senha"
+                            placeholder="Insira sua senha"
+                            prefix-icon="el-icon-lock"
+                        >
+                        </el-input>
+                        <el-button
+                            type="text"
+                            class="show-password-button"
+                            @click="togglePassword('senha')"
+                        >
+                            <el-icon>
+                                <template v-if="showPassword">
+                                    <Hide />
+                                </template>
+                                <template v-else>
+                                    <View />
+                                </template>
+                            </el-icon>
+                        </el-button>
                     </el-form-item>
+                    <!-- Campo de Confirmar Senha -->
                     <el-form-item v-if="isRegister">
-                        <el-input type="password" v-model="loginForm.confirmSenha" placeholder="Confirme sua senha" prefix-icon="el-icon-lock"></el-input>
+                        <el-input
+                            :type="showConfirmPassword ? 'text' : 'password'"
+                            v-model="loginForm.confirmSenha"
+                            placeholder="Confirme sua senha"
+                            prefix-icon="el-icon-lock"
+                        >
+                        </el-input>
+                        <el-button
+                            type="text"
+                            class="show-password-button"
+                            @click="togglePassword('confirmSenha')"
+                        >
+                            <el-icon>
+                                <template v-if="showConfirmPassword">
+                                    <Hide />
+                                </template>
+                                <template v-else>
+                                    <View />
+                                </template>
+                            </el-icon>
+                        </el-button>
                     </el-form-item>
                     <el-form-item class="login-button-container">
                         <template v-if="isRegister">
@@ -46,11 +93,18 @@
 
 <script>
 import { login, cadastrar } from '@/services/authServices.js';
+import { View, Hide } from '@element-plus/icons-vue';
 
 export default {
+    components: {
+        View,
+        Hide,
+    },
     data() {
         return {
             isRegister: false,
+            showPassword: false, 
+            showConfirmPassword: false,
             loginForm: {
                 email: '',
                 senha: '',
@@ -60,14 +114,21 @@ export default {
         };
     },
     methods: {
+        togglePassword(campo) {
+            if (campo === 'senha') {
+                this.showPassword = !this.showPassword;
+            } else if (campo === 'confirmSenha') {
+                this.showConfirmPassword = !this.showConfirmPassword;
+            }
+        },
         async handleLogin() {
             try {
                 const response = await login(this.loginForm.email, this.loginForm.senha);
-                
+
                 if (response.data.token) {
                     // 1. Armazena o token na sessionStorage
                     sessionStorage.setItem('authToken', response.data.token);
-                    
+
                     // 2. Envia o token para a extensão salvar no chrome.storage.local
                     //console.log("Tentando enviar mensagem para salvar o token na extensão");
                     //chrome.runtime.sendMessage(
@@ -107,7 +168,12 @@ export default {
                 alert('Cadastro realizado com sucesso! Faça login para continuar.');
                 this.toggleForm();
             } catch (error) {
-                alert('Erro ao realizar o cadastro. Verifique os dados e tente novamente.');
+                if (error.response && error.response.data && error.response.data.errors) {
+                    const mensagensErro = Object.values(error.response.data.errors).flat();
+                    alert(mensagensErro.join('\n'));
+                } else {
+                    alert('Erro ao realizar o cadastro. Verifique os dados e tente novamente.');
+                }
             }
         },
         toggleForm() {
@@ -178,6 +244,15 @@ export default {
             display: block;
             margin-top: 10px;
             color: #007bff;
+        }
+
+        .show-password-button {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #979797;
         }
     }
 

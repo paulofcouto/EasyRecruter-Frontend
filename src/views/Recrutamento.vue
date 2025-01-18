@@ -1,7 +1,7 @@
 <template>
   <div class="recrutamento-container">
     <div class="search-box">
-      <el-input v-model="searchQuery" placeholder="Buscar candidatos...">
+      <el-input v-model="searchQuery" placeholder="Filtrar candidatos...">
         <template #prepend>
           <el-button :icon="Search" />
         </template>
@@ -18,7 +18,7 @@
         <el-card class="candidato-card" shadow="hover">
           <div class="card-content">
             <img
-              :src="candidato.foto || 'https://via.placeholder.com/80'"
+              :src="candidato.foto"
               alt="Foto do candidato"
               class="candidato-foto"
             />
@@ -40,6 +40,48 @@
             >
             </el-button>
           </div>
+          <div class="expand-button-container">
+            <button
+              class="expand-button"
+              @click="toggleExpand(candidato.id)"
+            >
+              <div
+                class="triangle"
+                :class="{ 'rotated': expandedCards.has(candidato.id) }"
+              ></div>
+            </button>
+          </div>
+          <div v-if="expandedCards.has(candidato.id)" class="expanded-content">
+            <h3>Experiências</h3>
+            <div v-if="candidato.experiencias.length > 0">
+              <div v-for="(experiencia, index) in candidato.experiencias" :key="index" class="experience-item">
+                <div class="experience-header">
+                  <strong>{{ experiencia.empresa }}</strong>
+                  <span class="experience-location">{{ experiencia.local }}</span>
+                </div>
+                <p v-if="experiencia.cargos && experiencia.cargos.length > 0">
+                  <div v-for="(cargo, cargoIndex) in experiencia.cargos" :key="cargoIndex" class="cargo-item">
+                    <span class="cargo-title">
+                      <el-icon><Right /></el-icon> {{ cargo.titulo }}
+                    </span>
+                    <span class="cargo-period">{{ cargo.periodo }}</span>
+                    <p class="cargo-description">{{ cargo.descricao }}</p>
+                  </div>
+                </p>
+              </div>
+            </div>
+            <p v-else>Sem experiências disponíveis.</p>
+
+            <h3 class="titulo-formacao">Formações</h3>
+            <div v-if="candidato.formacoes.length > 0">
+              <div v-for="(formacao, index) in candidato.formacoes" :key="index" class="education-item">
+                <strong>{{ formacao.instituicao }}</strong>
+                <p>{{ formacao.curso }}</p>
+                <span class="education-period">{{ formacao.periodo }}</span>
+              </div>
+            </div>
+            <p v-else>Sem formações disponíveis.</p>
+          </div>
         </el-card>
       </el-col>
     </el-row>
@@ -53,18 +95,57 @@
 </template>
 
 <script setup>
+import placeholderImage from "../assets/placeholder.png"; 
 import { ref, computed, onMounted } from "vue";
-import { Search } from "@element-plus/icons-vue";
+import { Search, Right } from "@element-plus/icons-vue";
 import { getCandidatos, deleteCandidato } from "../services/candidatoService";
 
 const searchQuery = ref("");
-const candidatos = ref([]);
+
+const candidatos = ref([
+  {
+    id: "",
+    nome: "",
+    foto: "",
+    urlPublica: "",
+    descricaoProfissional: "",
+    resumo: "",
+    experiencias: [], 
+    formacoes: []
+  },
+]);
+
+const expandedCards = ref(new Set());
+
+const toggleExpand = (id) => {
+  if (expandedCards.value.has(id)) {
+    expandedCards.value.delete(id);
+  } else {
+    expandedCards.value.add(id);
+  }
+};
 
 const fetchCandidatos = async () => {
   try {
-    candidatos.value = await getCandidatos();
+    const response = await getCandidatos();
+    if (response && Array.isArray(response)) {
+      candidatos.value = response.map((candidato) => ({
+        id: candidato.id || "",
+        nome: candidato.nome || "Nome não informado",
+        foto: candidato.foto || placeholderImage,
+        urlPublica: candidato.urlPublica || "#",
+        descricaoProfissional: candidato.descricaoProfissional || "Descrição não informada",
+        resumo: candidato.resumo || "Resumo não informado",
+        experiencias: candidato.experiencias || [],
+        formacoes: candidato.formacoes || [],
+      }));
+    } else {
+      console.error("Resposta da API inválida:", response);
+      candidatos.value = []; 
+    }
   } catch (error) {
     console.error("Erro ao carregar candidatos:", error);
+    candidatos.value = [];
   }
 };
 
@@ -79,11 +160,37 @@ const deletarCandidato = async (id) => {
 
 
 const filteredCandidatos = computed(() =>
-  candidatos.value.filter((candidato) =>
-    candidato.nome.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-    candidato.descricaoProfissional?.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-    candidato.resumo?.toLowerCase().includes(searchQuery.value.toLowerCase())
-  )
+  candidatos.value.filter((candidato) => {
+    const query = searchQuery.value.toLowerCase();
+
+    // Verificar nome, descrição profissional e resumo
+    const matchesBasicFields =
+      candidato.nome.toLowerCase().includes(query) ||
+      candidato.descricaoProfissional?.toLowerCase().includes(query) ||
+      candidato.resumo?.toLowerCase().includes(query);
+
+    // Verificar em experiências
+    const matchesExperiencias = candidato.experiencias?.some((experiencia) =>
+      [experiencia.empresa, experiencia.local]
+        .some((campo) => campo?.toLowerCase().includes(query))
+    );
+
+    // Verificar em cargos das experiências
+    const matchesCargos = candidato.experiencias?.some((experiencia) =>
+      experiencia.cargos?.some((cargo) =>
+        [cargo.titulo, cargo.descricao]
+          .some((campo) => campo?.toLowerCase().includes(query))
+      )
+    );
+
+    // Verificar em formações
+    const matchesFormacoes = candidato.formacoes?.some((formacao) =>
+      [formacao.instituicao, formacao.curso]
+        .some((campo) => campo?.toLowerCase().includes(query))
+    );
+
+    return matchesBasicFields || matchesExperiencias || matchesCargos || matchesFormacoes;
+  })
 );
 
 onMounted(() => {
@@ -113,6 +220,7 @@ onMounted(() => {
 }
 
 .candidato-card {
+  position: relative;
   border-radius: 8px;
   display: flex;
   flex-direction: column;
@@ -138,9 +246,10 @@ onMounted(() => {
   flex-direction: column;
 }
 
-.candidato-info h3 {
+.candidato-info h2 {
   margin: 0;
-  font-size: 16px;
+  font-size: 18px;
+  font-weight: bold;
 }
 
 .candidato-info p {
@@ -160,9 +269,115 @@ onMounted(() => {
 }
 
 .delete-button {
+  position: absolute;
+  margin: 7px;
   top: 10px;
   right: 10px;
   font-size: 15px;
   padding: 5px;
+  border: none;
+  cursor: pointer;
 }
+
+.expand-button-container {
+  text-align: right;
+}
+
+.expand-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.triangle {
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 10px solid #6c63ff;
+  transition: transform 0.3s ease;
+}
+
+.triangle.rotated {
+  transform: rotate(180deg);
+}
+
+.expanded-content {
+  font-size: 14px;
+  color: #555;
+}
+
+.expanded-content h3 {
+  margin-bottom: 5px;
+  font-size: 18px;
+  color: #333;
+  font-weight: bold;
+}
+
+/* Estilo para itens de experiência */
+.experience-item,
+.education-item {
+  margin-bottom: 20px;
+  padding: 10px 15px;
+  border-left: 3px solid #6c63ff;
+  background: #f5f5f5;
+  border-radius: 5px;
+}
+
+.experience-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.experience-location {
+  font-size: 14px;
+  color: #888;
+}
+
+/* Estilo para os cargos */
+.cargo-item {
+  margin-top: 10px;
+}
+
+.cargo-title {
+  font-weight: bold;
+  font-size: 15px;
+  display: block;
+}
+
+.cargo-title el-icon {
+  color: #6c63ff; 
+  margin-right: 5px; 
+  font-size: 14px; 
+}
+
+.cargo-period {
+  font-size: 14px;
+  color: #555;
+  display: block;
+  margin-bottom: 5px;
+}
+
+.cargo-description {
+  font-size: 14px;
+  color: #666;
+  margin-top: 5px;
+}
+
+/* Estilo para as formações */
+.titulo-formacao{
+  margin-top: 25px;
+}
+
+.education-period {
+  font-size: 14px;
+  color: #888;
+  display: block;
+  margin-top: 5px;
+}
+
 </style>

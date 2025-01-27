@@ -1,5 +1,5 @@
 <template>
-  <div class="recrutamento-container">
+  <div class="candidatos-container">
     <div class="search-box">
       <el-input v-model="searchQuery" placeholder="Filtrar candidatos...">
         <template #prepend>

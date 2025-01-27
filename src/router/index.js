@@ -2,14 +2,17 @@
 import { createRouter, createWebHashHistory  } from 'vue-router';
 
 import Login from '@/views/Login.vue';
-import Recrutamento from '@/views/Recrutamento.vue';
+import Candidatos from '@/views/Candidatos.vue';
 import Sobre from '@/views/Sobre.vue';
 import Sugestoes from '@/views/Sugestoes.vue';
+import CadastroEmpresa from "@/components/CadastroEmpresa.vue";
+import Usuario from "@/views/Usuario.vue";
+
 
 const routes = [
   {
     path: '/',
-    redirect: '/recrutamento',
+    redirect: '/candidatos',
   },
   {
     path: '/login',
@@ -18,10 +21,10 @@ const routes = [
     meta: { showMenu: false, showHeader: false  },
   },
   {
-    path: '/recrutamento',
-    name: 'Recrutamento',
-    component: Recrutamento,
-    meta: { showMenu: true, showHeader: true, title: 'Recrutamento' },
+    path: '/candidatos',
+    name: 'Candidatos',
+    component: Candidatos,
+    meta: { showMenu: true, showHeader: true, title: 'Candidatos' },
   },
   {
     path: "/sobre",
@@ -35,6 +38,17 @@ const routes = [
     component: Sugestoes,
     meta: { showMenu: true, showHeader: true, title: 'Sugestões'   },
   },
+  {
+    path: "/usuario",
+    name: "usuario",
+    component: Usuario,
+    meta: { showMenu: true, showHeader: true, title: 'Usuário'  },
+  },
+  { 
+    path: "/cadastro-empresa", 
+    name: "CadastroEmpresa", 
+    component: CadastroEmpresa 
+  }
 ];
 
 const router = createRouter({
@@ -48,7 +62,7 @@ router.beforeEach((to, from, next) => {
   if (to.path != '/login' && !isAuthenticated) {
     next('/login');
   } else if (to.path === '/login' && isAuthenticated) {
-    next('/recrutamento');
+    next('/candidatos');
   } else {
     next();
   }

@@ -1,5 +1,5 @@
 <template>
-  <div class="recrutamento-container">
+  <div class="Candidatos-container">
     <div class="guia-sistema">
       <h1 class="titulo">Guia de Utilização</h1>
       <p class="descricao">
@@ -55,7 +55,7 @@
 </template>
 
 <style scoped>
-.recrutamento-container {
+.candidatos-container {
   max-width: 800px;
   margin: 0 auto;
   padding: 20px;

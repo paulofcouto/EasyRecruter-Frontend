@@ -23,14 +23,15 @@
 <script setup>
 import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
-import { Suitcase, InfoFilled, Lightning, Expand, Fold } from "@element-plus/icons-vue";
+import { Suitcase, UserFilled, InfoFilled, Lightning, Expand, Fold } from "@element-plus/icons-vue";
 
 const isExpanded = ref(false);
 
 const menuItems = [
-  { id: 1, label: "Recrutamento", icon: Suitcase, route: "/recrutamento" },
-  { id: 2, label: "Sobre", icon: InfoFilled, route: "/sobre" },
-  { id: 3, label: "Sugestões", icon: Lightning, route: "/sugestoes" },
+  { id: 1, label: "Candidatos", icon: Suitcase, route: "/candidatos" },
+  { id: 2, label: "Usuario", icon: UserFilled, route: "/usuario" },
+  { id: 3, label: "Sobre", icon: InfoFilled, route: "/sobre" },
+  { id: 4, label: "Sugestões", icon: Lightning, route: "/sugestoes" },
 ];
 
 const router = useRouter();

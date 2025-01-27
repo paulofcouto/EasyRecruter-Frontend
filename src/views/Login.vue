@@ -146,10 +146,10 @@ export default {
                     //);
                     
                     // 3. Feedback ao usuário
-                    alert('Login realizado com sucesso!');
+                    //alert('Login realizado com sucesso!');
                     
                     //4. Redirecionar ou fazer algo após o login bem-sucedido
-                    this.$router.push('/recrutamento');
+                    this.$router.push('/candidatos');
                 }
             } catch (error) {
                 alert('Usuário ou senha inválidos.');

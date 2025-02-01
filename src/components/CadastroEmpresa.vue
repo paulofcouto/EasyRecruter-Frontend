@@ -2,8 +2,8 @@
   <el-dialog v-model="mostrarModal" title="Empresa" width="600px">
     <el-tabs v-model="abaAtiva" :style="{ height: '450px'}">
       <el-tab-pane label="Dados da Empresa" name="0">
-        <form @submit.prevent="salvarEmpresa">
-          <el-row gutter="20">
+        <el-form @submit.prevent="salvarEmpresa">
+          <el-row :gutter="20">
             <el-col :span="24">
               <el-form-item label="CNPJ" required label-position="top">
                 <el-input v-model="empresa.cnpj" v-mask="'##.###.###/####-##'" />
@@ -28,12 +28,12 @@
               </el-form-item>
             </el-col>
           </el-row>
-        </form>
+        </el-form>
       </el-tab-pane>
 
       <el-tab-pane label="Endereço" name="1">
-        <form @submit.prevent="salvarEmpresa">
-          <el-row gutter="20">
+        <el-form :model="empresa" @submit.prevent="salvarEmpresa">
+          <el-row :gutter="20">
             <el-col :span="8">
               <el-form-item label="CEP" label-position="top">
                 <el-input v-model="empresa.endereco.cep" v-mask="'#####-###'" placeholder="00000-000" />
@@ -58,7 +58,7 @@
             </el-col>
           </el-row>
 
-          <el-row gutter="20">
+          <el-row :gutter="20">
             <el-col :span="24">
               <el-form-item label="Cidade" label-position="top">
                 <el-input v-model="empresa.endereco.cidade" />
@@ -66,7 +66,7 @@
             </el-col>
           </el-row>
 
-          <el-row gutter="20">
+          <el-row :gutter="20">
             <el-col :span="24">
               <el-form-item label="Bairro" label-position="top">
                 <el-input v-model="empresa.endereco.bairro" />
@@ -74,7 +74,7 @@
             </el-col>
           </el-row>
 
-          <el-row gutter="20">
+          <el-row :gutter="20">
             <el-col :span="24">
               <el-form-item label="Rua" label-position="top">
                 <el-input v-model="empresa.endereco.rua" />
@@ -82,7 +82,7 @@
             </el-col>
           </el-row>
 
-          <el-row gutter="20">
+          <el-row :gutter="20">
             <el-col :span="8">
               <el-form-item label="Número" label-position="top">
                 <el-input v-model="empresa.endereco.numero" />
@@ -94,12 +94,12 @@
               </el-form-item>
             </el-col>
           </el-row>
-        </form>
+        </el-form>
       </el-tab-pane>
 
       <el-tab-pane label="Contatos" name="2"  style="overflow : auto; overflow-x: hidden; height: 100%;">
-        <form @submit.prevent="salvarEmpresa">
-          <el-row v-for="(email, index) in empresa.contato.emails" :key="index" gutter="20">
+        <el-form @submit.prevent="salvarEmpresa">
+          <el-row v-for="(email, index) in empresa.contato.emails" :key="index" :gutter="20">
             <el-col :span="20">
               <el-form-item label="Email" label-position="top">
                 <el-input v-model="email.endereco" clearable />
@@ -113,7 +113,7 @@
             </el-col>
           </el-row>
 
-          <el-row v-for="(telefone, index) in empresa.contato.telefones" :key="index" gutter="20">
+          <el-row v-for="(telefone, index) in empresa.contato.telefones" :key="index" :gutter="20">
             <el-col :span="6">
               <el-form-item label="DDD" label-position="top">
                 <el-input v-model="telefone.ddd" maxlength="2" v-mask="'##'" clearable />
@@ -132,19 +132,21 @@
             </el-col>
           </el-row>
           
-        </form>
+        </el-form>
       </el-tab-pane>
     </el-tabs>
     <template #footer class="modal-footer">  
       <div class="modal-footer">
-        <el-button type="primary" @click="salvarEmpresa">Salvar Empresa</el-button>
+        <el-button type="primary" @click="salvarEmpresa" :loading="loading">
+          Salvar Empresa
+        </el-button>
       </div>
     </template>
   </el-dialog>
 </template>
 
 <script>
-import { cadastrarEmpresa } from "../services/empresaService";
+import { cadastrarEmpresa, obterEmpresaDetalhado } from "../services/empresaService";
 import { getEstados } from "../services/enumService";
 import { Delete, Plus } from "@element-plus/icons-vue";
 
@@ -157,6 +159,7 @@ export default {
   data() {
     return {
       mostrarModal: false,
+      loading: false,
       abaAtiva: "0",
       empresa: {
         nomeFantasia: "",
@@ -178,33 +181,52 @@ export default {
           telefones: [{ ddd: "", numero: "" }],
         },
       },
-      estados: [],
+      estados: []
     };
   },
   methods: {
-    abrirModal() {
+    async abrirModal() {
       this.mostrarModal = true;
+      await this.carregarDadosEmpresa();
     },
-    fecharModal() {
+    async fecharModal() {
       this.mostrarModal = false;
+      await this.$nextTick();
     },
     async carregarEstados() {
       try {
         this.estados = await getEstados();
       } catch (error) {
-        console.error("Erro ao carregar estados:", error);
         alert("Não foi possível carregar os estados.");
+      }
+    },
+    async carregarDadosEmpresa() {
+      try {
+        const dados = await obterEmpresaDetalhado();
+
+        if (!dados || Object.keys(dados).length === 0) {
+          this.resetarFormulario();
+        } else {
+          this.empresa = dados;
+        }
+      } catch (error) {
+        alert("Erro ao carregar os dados da empresa. Tente novamente mais tarde.");
       }
     },
     async salvarEmpresa() {
       try {
-        const response = await cadastrarEmpresa(this.empresa);
+        this.loading = true;
+
+        const response = await cadastrarEmpresa(this.empresa); 
         this.$emit("empresaSalva", response);
-        this.fecharModal();
+        await this.fecharModal();
         this.resetarFormulario();
-      } catch (error) {
-        console.error("Erro ao cadastrar empresa:", error);
+      } 
+      catch (error) {
         alert("Erro ao cadastrar a empresa. Verifique os dados e tente novamente.");
+      } 
+      finally {
+        this.loading = false;
       }
     },
     adicionarEmail() {
@@ -244,6 +266,7 @@ export default {
   },
   mounted() {
     this.carregarEstados();
+    this.carregarDadosEmpresa();
   },
 };
 </script>

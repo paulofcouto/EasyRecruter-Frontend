@@ -10,3 +10,13 @@ export const cadastrarEmpresa = async (empresa) => {
     throw error;
   }
 };
+
+export const obterEmpresaDetalhado = async () => {
+  try {
+    const response = await apiClient.get('/v1/Empresa/EmpresaDetalhado');
+    return response.data; // Retorna os dados detalhados da empresa
+  } catch (error) {
+    console.error('Erro ao obter os dados da empresa:', error.response?.data || error.message);
+    throw error;
+  }
+};
